@@ -1,82 +1,37 @@
 package com.checkout.payment.gateway.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import java.io.Serializable;
+import com.checkout.payment.gateway.enums.CurrencyCode;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 
-public class PostPaymentRequest implements Serializable {
-
-  @JsonProperty("card_number_last_four")
-  private int cardNumberLastFour;
-  @JsonProperty("expiry_month")
-  private int expiryMonth;
-  @JsonProperty("expiry_year")
-  private int expiryYear;
-  private String currency;
-  private int amount;
-  private int cvv;
-
-  public int getCardNumberLastFour() {
-    return cardNumberLastFour;
-  }
-
-  public void setCardNumberLastFour(int cardNumberLastFour) {
-    this.cardNumberLastFour = cardNumberLastFour;
-  }
-
-  public int getExpiryMonth() {
-    return expiryMonth;
-  }
-
-  public void setExpiryMonth(int expiryMonth) {
-    this.expiryMonth = expiryMonth;
-  }
-
-  public int getExpiryYear() {
-    return expiryYear;
-  }
-
-  public void setExpiryYear(int expiryYear) {
-    this.expiryYear = expiryYear;
-  }
-
-  public String getCurrency() {
-    return currency;
-  }
-
-  public void setCurrency(String currency) {
-    this.currency = currency;
-  }
-
-  public int getAmount() {
-    return amount;
-  }
-
-  public void setAmount(int amount) {
-    this.amount = amount;
-  }
-
-  public int getCvv() {
-    return cvv;
-  }
-
-  public void setCvv(int cvv) {
-    this.cvv = cvv;
-  }
-
-  @JsonProperty("expiry_date")
-  public String getExpiryDate() {
-    return String.format("%d/%d", expiryMonth, expiryYear);
-  }
+public record PostPaymentRequest(
+    @NotBlank
+    @Pattern(regexp = "\\d{14,19}")
+    String cardNumber,
+    @NotNull
+    Integer expiryMonth,
+    @NotNull
+    Integer expiryYear,
+    @NotNull
+    CurrencyCode currency,
+    @NotNull
+    Integer amount,
+    @NotBlank
+    @Pattern(regexp = "\\d{3,4}")
+    String cvv) {
 
   @Override
+  @NotNull
   public String toString() {
+    String lastFourNumbers = cardNumber.substring(cardNumber.length() - 4, cardNumber().length());
     return "PostPaymentRequest{" +
-        "cardNumberLastFour=" + cardNumberLastFour +
+        "cardNumberLastFour=" + lastFourNumbers +
         ", expiryMonth=" + expiryMonth +
         ", expiryYear=" + expiryYear +
         ", currency='" + currency + '\'' +
         ", amount=" + amount +
-        ", cvv=" + cvv +
+        ", cvv=" +  cvv +
         '}';
   }
 }

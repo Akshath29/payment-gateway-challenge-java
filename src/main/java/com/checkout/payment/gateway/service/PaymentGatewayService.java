@@ -25,7 +25,11 @@ public class PaymentGatewayService {
     return paymentsRepository.get(id).orElseThrow(() -> new EventProcessingException("Invalid ID"));
   }
 
-  public UUID processPayment(PostPaymentRequest paymentRequest) {
-    return UUID.randomUUID();
+  public PostPaymentResponse processPayment(PostPaymentRequest paymentRequest) {
+    LOG.debug("Requesting payment");
+    UUID id = UUID.randomUUID();
+    // TODO: NEED TO MAKE A RESPONSE ABOVE
+    paymentsRepository.add();
+    return paymentsRepository.get(id).orElseThrow(() -> new EventProcessingException("Invalid ID"));;
   }
 }

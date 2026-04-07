@@ -1,5 +1,6 @@
 package com.checkout.payment.gateway.repository;
 
+import com.checkout.payment.gateway.model.PostPaymentRequest;
 import com.checkout.payment.gateway.model.PostPaymentResponse;
 import java.util.HashMap;
 import java.util.Optional;
@@ -12,7 +13,7 @@ public class PaymentsRepository {
   private final HashMap<UUID, PostPaymentResponse> payments = new HashMap<>();
 
   public void add(PostPaymentResponse payment) {
-    payments.put(payment.getId(), payment);
+    payments.put(payment.id(), payment);
   }
 
   public Optional<PostPaymentResponse> get(UUID id) {
