@@ -34,7 +34,6 @@ public record PostPaymentRequest(
   }
 
   public PostPaymentResponse toPostPaymentResponse(PaymentStatus status){
-    UUID id = UUID.randomUUID();
     return new PostPaymentResponse(
       UUID.randomUUID(),
         status,

@@ -165,6 +165,30 @@ class PaymentGatewayControllerTest {
   }
 
   @Test
+  void whenBankResponseBodyIsNullThenPaymentIsDeclined() throws Exception {
+    when(restTemplate.postForEntity(eq("http://localhost:8080/payments"), any(),
+        eq(BankPaymentResponse.class)))
+        .thenReturn(new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR));
+
+    String requestBody = """
+        {
+          "cardNumber": "2222405343248878",
+          "expiryMonth": 12,
+          "expiryYear": 2030,
+          "currency": "USD",
+          "amount": 1050,
+          "cvv": "123"
+        }
+        """;
+
+    mvc.perform(MockMvcRequestBuilders.post("/payments")
+            .contentType("application/json")
+            .content(requestBody))
+        .andExpect(status().isServiceUnavailable())
+        .andExpect(jsonPath("$.status").value(PaymentStatus.DECLINED.getName()));
+  }
+
+  @Test
   void whenBankIsUnavailableThen503IsReturned() throws Exception {
     when(restTemplate.postForEntity(eq("http://localhost:8080/payments"), any(),
         eq(BankPaymentResponse.class)))

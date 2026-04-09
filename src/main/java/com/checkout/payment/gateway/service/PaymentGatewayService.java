@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 @Service
@@ -53,15 +54,22 @@ public class PaymentGatewayService {
         paymentRequest.cvv()
     );
 
-    ResponseEntity<BankPaymentResponse> bankResponse =
-        restTemplate.postForEntity(
-            "http://localhost:8080/payments",
-            bankRequest,
-            BankPaymentResponse.class
-        );
-    LOG.debug(("Request sent to bank"));
-
-    return handleBankResponse(bankResponse, paymentRequest);
+    try {
+      ResponseEntity<BankPaymentResponse> bankResponse = restTemplate.postForEntity("http://localhost:8080/payments",
+          bankRequest,
+          BankPaymentResponse.class);
+      if (bankResponse.getBody() == null) {
+        throw new BankRequestException("Bank returned no response",
+            paymentRequest.toPostPaymentResponse(PaymentStatus.DECLINED));
+      }
+      LOG.debug(("Request sent to bank"));
+      return handleBankResponse(bankResponse, paymentRequest);
+    } catch (RestClientException ex) {
+      throw new BankRequestException(
+          "Bank request failed",
+          paymentRequest.toPostPaymentResponse(PaymentStatus.DECLINED)
+      );
+    }
   }
 
   private PostPaymentResponse handleBankResponse(ResponseEntity<BankPaymentResponse> bankResponse,
