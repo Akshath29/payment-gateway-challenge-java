@@ -139,6 +139,7 @@ class PaymentGatewayControllerTest {
         .andExpect(jsonPath("$.currency").value(CurrencyCode.USD.getName()))
         .andExpect(jsonPath("$.amount").value(1050));
   }
+
   @Test
   void whenBankRespondsUnauthorizedThenPaymentIsDeclined() throws Exception {
     when(restTemplate.postForEntity(eq("http://localhost:8080/payments"), any(),
