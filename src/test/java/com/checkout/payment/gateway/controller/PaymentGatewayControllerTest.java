@@ -112,7 +112,7 @@ class PaymentGatewayControllerTest {
   }
 
   @Test
-  void whenPostPaymentRequestisValidThenPaymentCanBeReturnedUsingGetEndpoint() throws Exception {
+  void whenPostPaymentRequestIsValidThenPaymentCanBeReturnedUsingGetEndpoint() throws Exception {
     when(restTemplate.postForEntity(eq("http://localhost:8080/payments"), any(), eq(BankPaymentResponse.class)))
         .thenReturn(new ResponseEntity<>(new BankPaymentResponse(true, UUID.randomUUID().toString()),
             HttpStatus.OK));
@@ -253,7 +253,7 @@ class PaymentGatewayControllerTest {
   }
 
   @Test
-  void whenCardExpiryisInThePastThen400IsReturned() throws Exception {
+  void whenCardExpiryIsInThePastThen400IsReturned() throws Exception {
     String invalidRequestBody = """
         {
           "cardNumber": "2222405343248877",
