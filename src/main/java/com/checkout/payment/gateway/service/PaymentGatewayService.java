@@ -1,22 +1,19 @@
 package com.checkout.payment.gateway.service;
 
 import com.checkout.payment.gateway.enums.PaymentStatus;
+import com.checkout.payment.gateway.exception.BankRequestException;
 import com.checkout.payment.gateway.exception.EventProcessingException;
 import com.checkout.payment.gateway.model.BankPaymentRequest;
 import com.checkout.payment.gateway.model.BankPaymentResponse;
 import com.checkout.payment.gateway.model.PostPaymentRequest;
 import com.checkout.payment.gateway.model.PostPaymentResponse;
 import com.checkout.payment.gateway.repository.PaymentsRepository;
-import java.sql.Date;
-import java.time.LocalDate;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.http.HttpStatusCode;
 
 @Service
 public class PaymentGatewayService {
@@ -39,21 +36,15 @@ public class PaymentGatewayService {
   public PostPaymentResponse processPayment(PostPaymentRequest paymentRequest) {
     LOG.debug("Requesting payment");
 
-    PostPaymentResponse paymentResponse  = sendPaymentToBank(paymentRequest);
+    PostPaymentResponse paymentResponse = sendPaymentToBank(paymentRequest);
     paymentsRepository.add(paymentResponse);
     return paymentResponse;
   }
 
 
-  // TODO: ADD PROPER LOGS
   private PostPaymentResponse sendPaymentToBank(PostPaymentRequest paymentRequest) {
-    LOG.debug(("Sending request to bank"));
-    LocalDate date = LocalDate.now();
-    String expiryDate = String.format("%02d/%d", paymentRequest.expiryMonth(), paymentRequest.expiryYear());
-    if(!LocalDate.of(paymentRequest.expiryYear(), paymentRequest.expiryMonth(), 1).isAfter(date)){
-      throw new EventProcessingException("Card expiry date is before the current date");
-    }
-
+    String expiryDate = String.format("%02d/%d", paymentRequest.expiryMonth(),
+        paymentRequest.expiryYear());
     BankPaymentRequest bankRequest = new BankPaymentRequest(
         paymentRequest.cardNumber(),
         expiryDate,
@@ -68,58 +59,27 @@ public class PaymentGatewayService {
             bankRequest,
             BankPaymentResponse.class
         );
-
+    LOG.debug(("Request sent to bank"));
 
     return handleBankResponse(bankResponse, paymentRequest);
   }
 
-  private PostPaymentResponse handleBankResponse(ResponseEntity<BankPaymentResponse> bankResponse, PostPaymentRequest paymentRequest) {
-    UUID id = UUID.randomUUID();
-    // TODO: MAKE THIS INTO A EXCEPTION
-    if(bankResponse.getBody() == null){
-      throw new EventProcessingException("Bank responded with null");
+  private PostPaymentResponse handleBankResponse(ResponseEntity<BankPaymentResponse> bankResponse,
+      PostPaymentRequest paymentRequest) {
+    if (bankResponse.getBody() == null) {
+      LOG.debug("Bank returning null");
+      return paymentRequest.toPostPaymentResponse(PaymentStatus.DECLINED);
     }
-    if(bankResponse.getStatusCode().is2xxSuccessful() && !bankResponse.getBody().authorized()) {
-        return new PostPaymentResponse(
-            id,
-            PaymentStatus.DECLINED,
-            paymentRequest.getCardNumberLastFour(),
-            paymentRequest.expiryMonth(),
-            paymentRequest.expiryYear(),
-            paymentRequest.currency(),
-            paymentRequest.amount());
-      }
+    if (bankResponse.getStatusCode().is2xxSuccessful() && bankResponse.getBody().authorized()) {
+      return paymentRequest.toPostPaymentResponse(PaymentStatus.AUTHORIZED);
+    }
+    if (bankResponse.getStatusCode().is5xxServerError()){
+      LOG.debug("Error with request to bank {}", bankResponse.getBody());
+      throw new BankRequestException("Bank unavailable", paymentRequest.toPostPaymentResponse(PaymentStatus.DECLINED));
+    }
 
-      if(bankResponse.getStatusCode().is4xxClientError()){
-        return new PostPaymentResponse(
-            id,
-            PaymentStatus.REJECTED,
-            paymentRequest.getCardNumberLastFour(),
-            paymentRequest.expiryMonth(),
-            paymentRequest.expiryYear(),
-            paymentRequest.currency(),
-            paymentRequest.amount());
-      }
 
-      if(bankResponse.getStatusCode().is5xxServerError()){
-        return new PostPaymentResponse(
-            id,
-            PaymentStatus.DECLINED,
-            paymentRequest.getCardNumberLastFour(),
-            paymentRequest.expiryMonth(),
-            paymentRequest.expiryYear(),
-            paymentRequest.currency(),
-            paymentRequest.amount());
-      }
-
-    return new PostPaymentResponse(
-        id,
-        PaymentStatus.AUTHORIZED,
-        paymentRequest.getCardNumberLastFour(),
-        paymentRequest.expiryMonth(),
-        paymentRequest.expiryYear(),
-        paymentRequest.currency(),
-        paymentRequest.amount());
+    return paymentRequest.toPostPaymentResponse(PaymentStatus.DECLINED);
   }
 }
 

@@ -1,6 +1,9 @@
 package com.checkout.payment.gateway.exception;
 
+import com.checkout.payment.gateway.enums.PaymentStatus;
 import com.checkout.payment.gateway.model.ErrorResponse;
+import com.checkout.payment.gateway.model.PostPaymentRequest;
+import com.checkout.payment.gateway.model.PostPaymentResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -21,9 +24,19 @@ public class CommonExceptionHandler {
         HttpStatus.NOT_FOUND);
   }
 
+
   @ExceptionHandler(MethodArgumentNotValidException.class)
-  public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex){
-  return new ResponseEntity<>(new ErrorResponse("Invalid Request Body" + ex.getMessage()),
+  public ResponseEntity<ErrorResponse> handleInvalidPaymentRequest(MethodArgumentNotValidException ex){
+    LOG.debug(ex.getMessage());
+  return new ResponseEntity<>(new ErrorResponse("Invalid Parameters used in the payments request"),
     HttpStatus.BAD_REQUEST);
   }
+
+  @ExceptionHandler(BankRequestException.class)
+  public ResponseEntity<PostPaymentResponse> handleInvalidPaymentRequest(BankRequestException ex){
+    LOG.debug(ex.getMessage());
+    return new ResponseEntity<>(ex.getErrorPostPaymentResponse(),
+        HttpStatus.SERVICE_UNAVAILABLE);
+  }
+
 }

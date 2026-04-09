@@ -7,11 +7,11 @@ import java.util.UUID;
 
 public record PostPaymentResponse(UUID id,
                                   PaymentStatus status,
-                                  int cardNumberLastFour,
-                                  int expiryMonth,
-                                  int expiryYear,
+                                  Integer cardNumberLastFour,
+                                  Integer expiryMonth,
+                                  Integer expiryYear,
                                   CurrencyCode currency,
-                                  int amount) {
+                                  Integer amount) {
 
   @Override
   @NotNull
